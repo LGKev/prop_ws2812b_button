@@ -31,30 +31,53 @@ void setup() {
   
 }
 
+// Variables will change:
+int buttonState;             // the current reading from the input pin
+int lastButtonState = LOW;   // the previous reading from the input pin
+// the following variables are unsigned longs because the time, measured in
+// milliseconds, will quickly become a bigger number than can be stored in an int.
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+
+
 void loop() {
+
+int reading = digitalRead(SWITCH_INPUT);
   // put your main code here, to run repeatedly:
   
   Serial.print("color index:  ");
   Serial.println(color_index);
   
-  	show(color_index);
-  
-	if(digitalRead(SWITCH_INPUT) == HIGH){
-		debounce_count ++;
-	if(debounce_count >7){
-		color_index ++;
-		debounce_count = 0;
-		if(color_index > NUMBER_OF_COLORS){
-			color_index = 0;
-			}
-		}
-	}
-	else{
-			digitalWrite(LED, LOW);
-			BUTTON_LED.setPixelColor(0, BUTTON_LED.Color(0,0,0)); //set the color, remember indexed at 0.
-			BUTTON_LED.show(); //display the color
-	}
+  	 if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer than the debounce
+    // delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (reading != buttonState) {
+      buttonState = reading;
+
+      // only toggle the LED if the new button state is HIGH
+      if (buttonState == HIGH) {
+        //cycle colors here
+		show(color_index);
+		color_index++;
+		if(color_index > NUMBER_OF_COLORS)color_index = 0;
+      }
+    }
+  }
+
+
+
+
+  // save the reading. Next time through the loop, it'll be the lastButtonState:
+  lastButtonState = reading;
 }
+	
 
 
 void show(int color_index){
@@ -84,6 +107,7 @@ void show(int color_index){
 		BUTTON_LED.setPixelColor(0, BUTTON_LED.Color(0,0,0)); //set the color, remember indexed at 0.
 		BUTTON_LED.show(); //display the color
 		color_index = 0; //should force loop around..
+		Serial.println("******************");
 		break;
 	}
 		
